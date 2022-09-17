@@ -7,7 +7,9 @@ import {
   h,
   nodeOps,
   toHandlers,
-  nextTick
+  nextTick,
+  watchEffect,
+  ref
 } from '@vue/runtime-test'
 import { isEmitListener } from '../src/componentEmits'
 
@@ -430,5 +432,33 @@ describe('component: emit', () => {
     render(null, el)
     await nextTick()
     expect(fn).not.toHaveBeenCalled()
+  })
+
+  // #6669
+  test('no dependencies are collected when emit is triggered', async () => {
+    let count = 0
+    const Foo = defineComponent({
+      render() {},
+      created() {
+        watchEffect(() => {
+          this.$emit('foo')
+          this.$emit('bar')
+          count++
+        })
+      }
+    })
+
+    const trigger = ref(false)
+    const onFoo = jest.fn(() => trigger.value)
+    const onBarOnce = jest.fn(() => trigger.value)
+    const Comp = () => h(Foo, { onFoo, onBarOnce })
+
+    render(h(Comp), nodeOps.createElement('div'))
+    expect(count).toBe(1)
+
+    trigger.value = true
+    await nextTick()
+    // should not be run again
+    expect(count).toBe(1)
   })
 })

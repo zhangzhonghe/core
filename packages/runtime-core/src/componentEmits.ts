@@ -27,6 +27,7 @@ import {
   compatModelEventPrefix,
   compatModelEmit
 } from './compat/componentVModel'
+import { pauseTracking, resetTracking } from '@vue/reactivity'
 
 export type ObjectEmitsOptions = Record<
   string,
@@ -161,12 +162,15 @@ export function emit(
   }
 
   if (handler) {
+    // #6669
+    pauseTracking()
     callWithAsyncErrorHandling(
       handler,
       instance,
       ErrorCodes.COMPONENT_EVENT_HANDLER,
       args
     )
+    resetTracking()
   }
 
   const onceHandler = props[handlerName + `Once`]
@@ -177,12 +181,16 @@ export function emit(
       return
     }
     instance.emitted[handlerName] = true
+
+    // #6669
+    pauseTracking()
     callWithAsyncErrorHandling(
       onceHandler,
       instance,
       ErrorCodes.COMPONENT_EVENT_HANDLER,
       args
     )
+    resetTracking()
   }
 
   if (__COMPAT__) {
