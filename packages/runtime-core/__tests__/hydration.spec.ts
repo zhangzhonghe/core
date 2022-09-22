@@ -545,6 +545,28 @@ describe('SSR hydration', () => {
     expect(text.textContent).toBe('bye')
   })
 
+  // #6715
+  test('TransitionGroup & v-if="false', async () => {
+    const App = {
+      template: `
+        <TransitionGroup>
+          <div v-if="false" key="a">a</div>
+          <div key="b">b</div>
+        </TransitionGroup>`
+    }
+
+    const container = document.createElement('div')
+    // server render
+    const serverSide = await renderToString(h(App))
+    container.innerHTML = serverSide
+
+    // hydrate
+    createSSRApp(App).mount(container)
+    const cleintSide = container.innerHTML
+
+    expect(serverSide).toBe(cleintSide)
+  })
+
   test('handle click error in ssr mode', async () => {
     const App = {
       setup() {

@@ -111,10 +111,19 @@ const TransitionGroupImpl: ComponentOptions = {
       }
 
       prevChildren = children
-      children = slots.default ? getTransitionRawChildren(slots.default()) : []
+      children = slots.default
+        ? // #6715
+          // allow the presence of comment nodes for consistency with the SSR,
+          // otherwise there will be a mismatch warn during hydration
+          getTransitionRawChildren(slots.default(), true)
+        : []
 
       for (let i = 0; i < children.length; i++) {
         const child = children[i]
+
+        // #6715
+        if (child.type !== Comment) continue
+
         if (child.key != null) {
           setTransitionHooks(
             child,
