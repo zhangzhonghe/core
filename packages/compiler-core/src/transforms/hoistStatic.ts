@@ -97,6 +97,12 @@ function walk(
           }
         }
       }
+    } else if (
+      child.type === NodeTypes.TEXT_CALL &&
+      getConstantType(child.content, context) >= ConstantTypes.CAN_HOIST
+    ) {
+      child.codegenNode = context.hoist(child.codegenNode)
+      hoistedCount++
     }
 
     // walk further
